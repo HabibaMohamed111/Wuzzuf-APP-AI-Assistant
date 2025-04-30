@@ -13,6 +13,34 @@ import re
 import plotly.express as px
 
 # Streamlit page setup
+
+@st.cache_data
+def load_job_data():
+    try:
+        if "scraped_file" in st.session_state and st.session_state.scraped_file is not None:
+            file = st.session_state.scraped_file
+            file_content = file.read()
+            file.seek(0)
+            if file.name.endswith('.csv'):
+                job_data = pd.read_csv(io.BytesIO(file_content))
+            elif file.name.endswith('.xlsx'):
+                job_data = pd.read_excel(io.BytesIO(file_content))
+            else:
+                st.error("⚠️ Unsupported file format. Please upload a CSV or XLSX file.")
+                return None
+
+            job_data['Skills'] = job_data['Skills'].apply(lambda x: [s.strip() for s in str(x).split(',') if s.strip()])
+            return job_data
+
+        else:
+            st.info("ℹ️ No file uploaded. Using default demo data from 'demo_data.csv'.")
+            demo = pd.read_csv("demo_data.csv")
+            demo['Skills'] = demo['Skills'].apply(lambda x: [s.strip() for s in str(x).split(',') if s.strip()])
+            return demo
+    except Exception as e:
+        st.error(f"⚠️ Failed to load data: {e}")
+        return None
+
 st.set_page_config(
     page_title="Wuzzuf AI Helper",
     layout="wide",
@@ -121,74 +149,6 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # Function to load job data from session_state
-@st.cache_data
-def load_job_data():
-    if "scraped_file" in st.session_state and st.session_state.scraped_file is not None:
-        try:
-            file = st.session_state.scraped_file
-            file_content = file.read()
-            file.seek(0)
-            if file.name.endswith('.csv'):
-                job_data = pd.read_csv(io.BytesIO(file_content))
-            elif file.name.endswith('.xlsx'):
-                job_data = pd.read_excel(io.BytesIO(file_content))
-            else:
-                st.error("⚠️ Unsupported file format. Please upload a CSV or XLSX file.")
-                return None
-
-            if 'Skills' not in job_data.columns:
-                st.error("⚠️ The uploaded file must contain a 'Skills' column.")
-                return None
-
-            if job_data.empty:
-                st.error("⚠️ The uploaded file is empty.")
-                return None
-
-            job_data['Skills'] = job_data['Skills'].apply(lambda x: [s.strip() for s in str(x).split(',') if s.strip()])
-            return job_data
-
-        except Exception as e:
-            st.error(f"⚠️ Error reading the file: {e}")
-            return None
-    else:
-        st.info("ℹ️ No file uploaded. Using default demo data from 'demo_data.csv'.")
-        try:
-            demo = pd.read_csv("demo_data.csv")
-            demo['Skills'] = demo['Skills'].apply(lambda x: [s.strip() for s in str(x).split(',') if s.strip()])
-            return demo
-        except Exception as e:
-            st.error(f"⚠️ Failed to load default demo data: {e}")
-            return None
-    if "scraped_file" in st.session_state and st.session_state.scraped_file is not None:
-        try:
-            file = st.session_state.scraped_file
-            file_content = file.read()
-            file.seek(0)
-            if file.name.endswith('.csv'):
-                job_data = pd.read_csv(io.BytesIO(file_content))
-            elif file.name.endswith('.xlsx'):
-                job_data = pd.read_excel(io.BytesIO(file_content))
-            else:
-                st.error("⚠️ Unsupported file format. Please upload a CSV or XLSX file.")
-                return None
-
-            if 'Skills' not in job_data.columns:
-                st.error("⚠️ The uploaded file must contain a 'Skills' column.")
-                return None
-
-            if job_data.empty:
-                st.error("⚠️ The uploaded file is empty.")
-                return None
-
-            job_data['Skills'] = job_data['Skills'].apply(lambda x: [s.strip() for s in str(x).split(',') if s.strip()])
-            return job_data
-
-        except Exception as e:
-            st.error(f"⚠️ Error reading the file: {e}")
-            return None
-    else:
-        st.warning("⚠️ Please upload the job data file first.")
-        return None
 
 # Main page of the app (unchanged)
 def main_page():
